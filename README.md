@@ -119,15 +119,33 @@ instead of being sent. Stop it with `npx supabase stop`.
 
 1. Push this repo to GitHub.
 2. <https://vercel.com/new> → import the repo. Framework detection handles the rest.
-3. Add the four environment variables from `.env.local`, but set
-   `NEXT_PUBLIC_SITE_URL` to your production domain (e.g. `https://qirtas.app`).
+3. Add the three **Supabase** variables from `.env.local`. Leave
+   `NEXT_PUBLIC_SITE_URL` **unset** unless you already have a custom domain —
+   see below.
 4. Deploy, then go back to Supabase → **Authentication → URL Configuration** and
    add the production **Site URL** and `https://<domain>/auth/callback`.
 
-> **Set `NEXT_PUBLIC_SITE_URL` to the final domain before printing any labels.**
-> Every QR code is built from it. Codes printed against a preview URL will stop
-> resolving when that deployment is rotated. Changing the domain later means
-> reprinting every sticker.
+### The QR origin
+
+Every printed QR code is built from `siteUrl()`, which resolves in this order:
+
+1. `NEXT_PUBLIC_SITE_URL`, if set
+2. `VERCEL_PROJECT_PRODUCTION_URL` — the project's **stable** production
+   domain (`your-project.vercel.app`), not the per-deployment preview host
+3. `http://localhost:3000`
+
+**No custom domain yet?** Leave `NEXT_PUBLIC_SITE_URL` unset on Vercel. Codes
+are then built against your stable `*.vercel.app` domain, which does not change
+between deployments, so printed labels keep working.
+
+**When you do attach a custom domain**, set `NEXT_PUBLIC_SITE_URL` to it. Labels
+printed *before* that still resolve: Vercel keeps the `*.vercel.app` domain
+assigned to the project, so old codes continue to work while new ones use the
+custom domain. You don't have to reprint — though you may want to eventually,
+so every shelf shows the same branded URL.
+
+A localhost value is ignored on Vercel, so a `.env.example` copied by mistake
+can't silently produce unscannable labels.
 
 Supabase's built-in email sender is rate-limited and fine for testing. Before
 real traffic, set up a custom SMTP provider under **Authentication → Emails**

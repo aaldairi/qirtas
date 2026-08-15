@@ -29,15 +29,30 @@ export const env = {
 };
 
 /**
- * Absolute origin of this deployment. QR codes are printed and stuck on
- * shelves, so this has to be the real public URL — never a preview host.
+ * Absolute origin of this deployment. Every printed QR code is built from
+ * this, so getting it wrong turns a sheet of shelf labels into landfill.
+ *
+ * Resolution order:
+ *  1. NEXT_PUBLIC_SITE_URL — set this once a custom domain is attached.
+ *  2. VERCEL_PROJECT_PRODUCTION_URL — the project's *stable* production
+ *     domain, not the per-deployment preview host, so codes keep resolving
+ *     across redeploys. Leaving NEXT_PUBLIC_SITE_URL unset on Vercel is the
+ *     correct setup until a custom domain exists.
+ *  3. localhost, for development.
  */
 export function siteUrl(): string {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
-  if (explicit) return explicit.replace(/\/$/, "");
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : null;
 
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  if (vercel) return `https://${vercel}`;
+  // A localhost value copied out of .env.example must never win on a real
+  // deployment — that would silently print unscannable labels.
+  const explicitIsLocal =
+    !!explicit && /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(explicit);
+
+  if (explicit && !(explicitIsLocal && vercel)) return explicit;
+  if (vercel) return vercel;
 
   return "http://localhost:3000";
 }
