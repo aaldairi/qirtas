@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans_Arabic, JetBrains_Mono, Outfit } from "next/font/google";
 
+import { isConfigured, missingEnv } from "@/lib/env";
+import { SetupRequired } from "@/components/SetupRequired";
 import { getLang } from "@/lib/lang";
 import { dir, t } from "@/lib/i18n";
 
@@ -45,6 +47,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const lang = await getLang();
+  const configured = isConfigured();
 
   return (
     <html
@@ -71,7 +74,7 @@ export default async function RootLayout({
         >
           {lang === "ar" ? "تخطَّ إلى المحتوى" : "Skip to content"}
         </a>
-        {children}
+        {configured ? children : <SetupRequired missing={missingEnv()} />}
       </body>
     </html>
   );

@@ -7,6 +7,25 @@ function required(name: string, value: string | undefined): string {
   return value;
 }
 
+/**
+ * Which required variables are absent. Lets the app render a clear setup
+ * screen on a fresh deployment instead of throwing a raw 500 at whoever
+ * opens the URL first.
+ */
+export function missingEnv(): string[] {
+  return (
+    [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+    ] as const
+  ).filter((name) => !process.env[name]);
+}
+
+export function isConfigured(): boolean {
+  return missingEnv().length === 0;
+}
+
 export const env = {
   get supabaseUrl() {
     return required(
