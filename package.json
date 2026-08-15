@@ -8,7 +8,9 @@
     "start": "next start",
     "verify": "node scripts/verify.mjs",
     "typecheck": "tsc --noEmit",
-    "db:apply": "docker exec -i supabase_db_$(basename $PWD) psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/schema.sql"
+    "db:apply": "docker exec -i supabase_db_$(basename $PWD) psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/schema.sql",
+    "test": "node --test --experimental-strip-types \"src/**/*.test.ts\"",
+    "check": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

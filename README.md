@@ -196,9 +196,20 @@ limit in front of the `uploadReceipt` action.
 ```bash
 npm run dev        # http://localhost:3000
 npm run build      # production build
-npm run verify     # check env, schema, buckets
+npm test           # unit tests
 npm run typecheck  # tsc --noEmit
+npm run check      # typecheck + test + build
+npm run verify     # check env, schema, buckets (needs a running database)
+npm run db:apply   # apply schema.sql to the local Supabase stack
 ```
+
+Tests run on Node's built-in runner with native TypeScript, so there is no
+test framework to install and no build step. They cover the logic where a
+bug costs money or breaks a printed label: BHD rounding to three decimals,
+price parsing, slug rules (checked against the CHECK constraint in
+`schema.sql`), file-size display, dictionary parity between Arabic and
+English, and QR-origin resolution across local, Vercel, and custom-domain
+environments.
 
 ## Layout
 
