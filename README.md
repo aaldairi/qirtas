@@ -1,36 +1,204 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# قِرطاس · Qirtas
 
-## Getting Started
+A QR code for every product on the shelf. Customers scan with a phone camera,
+buy, and transfer the money straight to the shop. The owner confirms each
+payment from their dashboard.
 
-First, run the development server:
+Multi-tenant: any shop signs up, claims a store link, and gets its own
+catalogue, orders and printable QR labels. Fully bilingual (Arabic default,
+English toggle) with real RTL.
+
+Built with Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage).
+
+---
+
+## What's here
+
+| Surface | Route | What it does |
+| --- | --- | --- |
+| Marketing site | `/` | Hero, how-it-works, a real scannable QR, features, pricing |
+| Sign in | `/login` | Email magic link — no passwords |
+| Shop setup | `/onboarding` | Name, store link, payment methods |
+| Dashboard | `/dashboard` | Today's sales, orders needing attention, most-scanned |
+| Products | `/dashboard/products` | Create/edit, variants, stock, SKU, photos, per-product QR |
+| Orders | `/dashboard/orders` | Filter, review the transfer receipt, confirm or reject |
+| Label sheet | `/dashboard/labels` | A4 four-up shelf stickers, print-ready |
+| Settings | `/dashboard/settings` | Payment methods, pickup/delivery, WhatsApp |
+| Storefront | `/s/<slug>` | The shop's public catalogue |
+| **Product page** | `/s/<slug>/p/<id>` | **The QR destination** — variants, quantity, buy |
+| Cart / checkout | `/s/<slug>/cart`, `/checkout` | Details → transfer info → receipt upload |
+| Order tracking | `/order/<token>` | Customer's live status; the link is their receipt |
+
+There is no seeded, demo, or sample data anywhere. A new shop starts empty and
+fills up from real use.
+
+---
+
+## Setup
+
+### 1. Create a Supabase project
+
+<https://supabase.com/dashboard> → **New project**. Pick a region close to your
+customers (`eu-central-1` or `ap-south-1` are the nearest to Bahrain). Save the
+database password somewhere safe — you won't need it for this app, but Supabase
+will ask for it later.
+
+### 2. Apply the schema
+
+Open **SQL Editor** → **New query**, paste the entire contents of
+[`supabase/schema.sql`](supabase/schema.sql), and run it. It creates every
+table, the order-number allocator, row-level security policies, and both
+storage buckets. It's safe to re-run.
+
+### 3. Fill in the environment
+
+```bash
+cp .env.example .env.local
+```
+
+From **Project Settings → Data API** take the project URL, and from
+**Project Settings → API Keys** take the `anon` and `service_role` keys:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key>
+SUPABASE_SERVICE_ROLE_KEY=<service_role key>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+`SUPABASE_SERVICE_ROLE_KEY` bypasses row-level security. It is only ever read
+on the server — never prefix it with `NEXT_PUBLIC_`, and never commit it.
+
+### 4. Point auth at your app
+
+**Authentication → URL Configuration**:
+
+- **Site URL** — `http://localhost:3000` while developing, your real domain in production
+- **Redirect URLs** — add `http://localhost:3000/auth/callback` and `https://<your-domain>/auth/callback`
+
+Magic links won't sign anyone in until the callback URL is on that list.
+
+### 5. Check it
+
+```bash
+npm run verify
+```
+
+Every line should be a `✓`. Then:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Or run Supabase locally
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+If you have Docker running, you can develop against a local stack instead of a
+hosted project — no account needed:
 
-## Learn More
+```bash
+npx supabase start
+```
 
-To learn more about Next.js, take a look at the following resources:
+It prints an API URL and keys; put those in `.env.local`. Then apply the schema
+and check it:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run db:apply && npm run verify
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`supabase/config.toml` already allow-lists `http://localhost:3000/auth/callback`,
+so magic links work. Sign-in emails are captured at <http://127.0.0.1:54324>
+instead of being sent. Stop it with `npx supabase stop`.
 
-## Deploy on Vercel
+> `npx supabase start` also resets the database, so re-run `npm run db:apply`
+> after each start.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Going live on Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push this repo to GitHub.
+2. <https://vercel.com/new> → import the repo. Framework detection handles the rest.
+3. Add the four environment variables from `.env.local`, but set
+   `NEXT_PUBLIC_SITE_URL` to your production domain (e.g. `https://qirtas.app`).
+4. Deploy, then go back to Supabase → **Authentication → URL Configuration** and
+   add the production **Site URL** and `https://<domain>/auth/callback`.
+
+> **Set `NEXT_PUBLIC_SITE_URL` to the final domain before printing any labels.**
+> Every QR code is built from it. Codes printed against a preview URL will stop
+> resolving when that deployment is rotated. Changing the domain later means
+> reprinting every sticker.
+
+Supabase's built-in email sender is rate-limited and fine for testing. Before
+real traffic, set up a custom SMTP provider under **Authentication → Emails**
+so sign-in links land reliably.
+
+---
+
+## How money and stock work
+
+- **BHD, three decimals.** Prices are `numeric(12,3)` in Postgres and always
+  rendered with exactly three decimals, in Western digits, LTR — even in Arabic.
+- **No payment gateway.** Customers pay by bank transfer, wallet, or cash, and
+  upload a screenshot of the transfer. The shop reviews it and confirms. Money
+  never passes through this system, so there's nothing to take a cut of.
+- **Prices are never trusted from the client.** The cart cookie holds only
+  product ids and quantities; names, prices and stock are re-read from the
+  shop's own rows on every request.
+- **Stock is held at order time** via an atomic `adjust_stock()` update, so the
+  count can't drift and never goes negative. Rejecting an order puts it back.
+  Two checkouts landing in the same instant can still both succeed on a last
+  item — the owner sees both and rejects one. That's deliberate: nothing ships
+  without their confirmation anyway.
+- **Order numbers** are allocated by `next_order_code()`, a single atomic
+  `UPDATE ... RETURNING` per shop — no gaps, no collisions under concurrency.
+- **Receipts** live in a private bucket. The owner sees them through a
+  10-minute signed URL; they are never on a public path.
+- **Scan counts are real.** Each product page view records one `scan_event` per
+  visitor per product per day, deduplicated by a unique index. Nothing is
+  seeded or estimated.
+
+## Security notes
+
+- Row-level security is on for every table. The `anon` key can read shops,
+  active products and variants — nothing else. Orders, which carry customer
+  names and phone numbers, are unreadable with it.
+- All writes go through Server Actions that resolve the signed-in user to their
+  shop via `requireShop()` and scope every query by `shop_id`.
+- Customers reach their order through an unguessable `public_token` and the
+  page is marked `noindex`.
+
+**Worth knowing:** receipt upload is necessarily open to anonymous customers —
+that's the checkout flow. It's constrained to 5 MB and image/PDF types against
+an existing shop, but it isn't rate-limited. If you ever see abuse, put a rate
+limit in front of the `uploadReceipt` action.
+
+## Commands
+
+```bash
+npm run dev        # http://localhost:3000
+npm run build      # production build
+npm run verify     # check env, schema, buckets
+npm run typecheck  # tsc --noEmit
+```
+
+## Layout
+
+```
+src/
+  app/
+    actions/       server actions: shop, products, orders, cart, checkout
+    dashboard/     owner-facing app
+    s/[slug]/      public storefront (the QR destination)
+    order/[token]/ customer order tracking
+  components/      Icon, LangToggle, PaymentMethods, ProductImage, PageHeader
+  lib/
+    cart.ts        cookie cart + server-side repricing
+    data.ts        queries + requireShop() ownership guard
+    i18n.ts        the whole AR/EN dictionary
+    money.ts       BHD (3dp) formatting and parsing
+    qr.ts          QR generation
+    supabase/      browser / server / service-role clients
+  proxy.ts         session refresh + anonymous visitor id
+supabase/schema.sql
+```

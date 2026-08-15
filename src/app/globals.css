@@ -1,26 +1,273 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Ink + neutrals, lifted straight from the design files */
+  --color-ink: #1a1917;
+  --color-ink-2: #32302a;
+  --color-ink-3: #3d3a34;
+  --color-mute: #6e6a60;
+  --color-mute-2: #8c8578;
+  --color-mute-3: #a5a094;
+  --color-mute-4: #a6a092;
+  --color-mute-5: #b6b0a3;
+  --color-line: #e4e0d6;
+  --color-line-2: #d6d1c6;
+  --color-line-3: #efece4;
+  --color-line-4: #f3f0e9;
+  --color-line-5: #cbc5b6;
+  --color-chalk: #c9c4b8;
+  --color-paper: #fffdf8;
+  --color-soft: #faf8f3;
+  --color-sand: #f2efe8;
+  --color-sand-2: #f7f5f0;
+  --color-shell: #e9e7e1;
+  --color-dust: #eae6dc;
+
+  /* Accents */
+  --color-brand: oklch(0.55 0.12 255);
+  --color-brand-deep: oklch(0.45 0.12 255);
+  --color-ok: oklch(0.55 0.12 150);
+  --color-ok-soft: oklch(0.95 0.05 150);
+  --color-ok-line: oklch(0.88 0.06 150);
+  --color-ok-ink: oklch(0.42 0.11 150);
+  --color-warn: oklch(0.62 0.13 70);
+  --color-warn-soft: oklch(0.95 0.05 70);
+  --color-warn-ink: oklch(0.45 0.12 70);
+  --color-bad: oklch(0.55 0.16 30);
+  --color-bad-soft: oklch(0.96 0.03 30);
+  --color-bad-line: oklch(0.86 0.08 30);
+  --color-bad-ink: oklch(0.48 0.15 30);
+
+  --font-sans: var(--font-outfit), var(--font-plex-arabic), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), var(--font-plex-arabic), ui-monospace, monospace;
+
+  --radius-card: 20px;
+  --radius-field: 11px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background: var(--color-sand);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Arabic type carries its own rhythm; tracking tweaks tuned for Outfit
+     make it look broken, so zero it out wholesale in RTL. */
+  [dir="rtl"],
+  [dir="rtl"] * {
+    letter-spacing: 0 !important;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-mute-4);
+  }
+
+  /* Money, IBANs, SKUs and order codes stay Western-digit LTR inside RTL. */
+  .num {
+    font-family: var(--font-mono);
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-2);
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: content-box;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .ms {
+    font-family: "Material Symbols Rounded";
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    direction: ltr;
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    -webkit-font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  .ms-fill {
+    font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+  }
+
+  .field {
+    border: 1px solid var(--color-line-2);
+    border-radius: var(--radius-field);
+    padding: 13px 14px;
+    background: #fff;
+    color: var(--color-ink);
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .field:focus-visible {
+    border-color: var(--color-ink);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-ink) 10%, transparent);
+  }
+
+  .field[aria-invalid="true"] {
+    border-color: var(--color-bad);
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    color: var(--color-mute-2);
+    text-transform: none;
+  }
+
+  .card {
+    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 1;
+    padding: 15px 20px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.15s ease, background-color 0.15s ease,
+      border-color 0.15s ease, opacity 0.15s ease;
+  }
+
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: var(--color-brand);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  .btn-ink {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn-ink:hover:not(:disabled) {
+    background: var(--color-ink-2);
+  }
+
+  .btn-ghost {
+    border-color: var(--color-line-2);
+    color: var(--color-ink);
+    background: transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-sand);
+  }
+
+  .btn-ok {
+    background: var(--color-ok);
+    color: #fff;
+  }
+  .btn-ok:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-pop {
+  animation: pop 0.25s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------- label printing */
+/* A4 sheet of shelf stickers: four columns, cut lines, nothing else on the
+   page. Matches the dashboard's label preview 1:1. */
+
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .print-sheet {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6mm !important;
+    padding: 0 !important;
+    border: none !important;
+    background: #fff !important;
+  }
+
+  .print-label {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px dashed #b9b3a5 !important;
+    background: #fff !important;
+  }
 }
