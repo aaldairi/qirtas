@@ -110,10 +110,21 @@ async function main() {
   // ---------------------------------------------------------------- project
 
   step("Checking Supabase account");
-  const orgs = await api("/organizations");
-  if (!orgs?.length) die("No Supabase organization found on this account.");
-  const org = orgs[0];
-  log(`organization: ${org.name}`);
+  const me = await api("/profile");
+  log(`account: ${me.username ?? me.primary_email}`);
+
+  // A brand-new Supabase account has no organization, and projects can't
+  // exist without one. Create it rather than dead-ending the run.
+  let orgs = await api("/organizations");
+  let org = Array.isArray(orgs) ? orgs[0] : null;
+  if (!org) {
+    step("No organization on this account — creating one");
+    org = await api("/organizations", {
+      method: "POST",
+      body: JSON.stringify({ name: PROJECT_NAME }),
+    });
+  }
+  log(`organization: ${org.name} (${org.id})`);
 
   const projects = await api("/projects");
   let project = projects.find((p) => p.name === PROJECT_NAME);

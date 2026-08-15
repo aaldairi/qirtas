@@ -319,6 +319,13 @@ create policy product_images_public_read on storage.objects
 
 grant usage on schema public to anon, authenticated, service_role;
 
+-- Hosted Supabase projects ship default privileges that grant anon and
+-- authenticated broad access to new tables in public. Strip that back first,
+-- then re-grant only what the storefront needs. Without this revoke, orders
+-- would be protected by RLS alone; with it, the privilege is absent too, so a
+-- future policy mistake still cannot expose customer names and phone numbers.
+revoke all on all tables in schema public from anon, authenticated;
+
 grant all on all tables in schema public to service_role;
 grant all on all sequences in schema public to service_role;
 grant execute on all functions in schema public to service_role;
