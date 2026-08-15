@@ -29,6 +29,17 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+/**
+ * next/font emits each family as "Outfit, Outfit Fallback" behind one CSS
+ * variable. That generated fallback is a local system face which *does* carry
+ * Arabic glyphs, so it captured Arabic before the cascade reached IBM Plex
+ * Sans Arabic — Arabic silently rendered in the system font.
+ *
+ * Splitting off the primary name lets the stack be ordered exactly:
+ * Outfit (Latin) -> Plex Arabic (Arabic) -> the metric fallbacks.
+ */
+const primary = (family: string) => family.split(",")[0].trim();
+
 export const metadata: Metadata = {
   title: "قِرطاس · Qirtas",
   description:
@@ -54,6 +65,12 @@ export default async function RootLayout({
       lang={lang}
       dir={dir(lang)}
       className={`${outfit.variable} ${plexArabic.variable} ${jetbrains.variable}`}
+      style={
+        {
+          "--font-outfit-primary": primary(outfit.style.fontFamily),
+          "--font-jetbrains-primary": primary(jetbrains.style.fontFamily),
+        } as React.CSSProperties
+      }
     >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -38,8 +38,13 @@
   --color-bad-line: oklch(0.86 0.08 30);
   --color-bad-ink: oklch(0.48 0.15 30);
 
-  --font-sans: var(--font-outfit), var(--font-plex-arabic), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), var(--font-plex-arabic), ui-monospace, monospace;
+  /* Primary faces first, then Arabic, then the metric fallbacks. Ordering
+     matters: the generated *Fallback families carry Arabic glyphs and would
+     otherwise capture Arabic ahead of IBM Plex Sans Arabic. */
+  --font-sans: var(--font-outfit-primary), var(--font-plex-arabic),
+    var(--font-outfit), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-primary), var(--font-plex-arabic),
+    var(--font-jetbrains), ui-monospace, monospace;
 
   --radius-card: 20px;
   --radius-field: 11px;
