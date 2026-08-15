@@ -36,6 +36,30 @@ fills up from real use.
 
 ## Setup
 
+### Automated (one command)
+
+Everything below — project creation, schema, auth URLs, Vercel environment
+variables, deploy and verification — is scripted. The one step that cannot be
+automated is authentication, so it needs a personal access token:
+
+1. Generate one at <https://supabase.com/dashboard/account/tokens>
+2. Run:
+
+```bash
+SUPABASE_ACCESS_TOKEN=sbp_xxx npm run provision
+```
+
+It creates the project (or reuses an existing one named `qirtas`), applies the
+schema and verifies all seven tables, both functions and both buckets, checks
+the receipts bucket is private, configures the auth redirect URLs, sets the
+three Vercel environment variables, deploys to production, and confirms the
+live site renders without leaking a key. Safe to re-run.
+
+The token is read from the environment, never written to disk or committed.
+Revoke it afterwards if you like — it isn't needed again.
+
+Prefer to do it by hand? The manual steps follow.
+
 ### 1. Create a Supabase project
 
 <https://supabase.com/dashboard> → **New project**. Pick a region close to your
