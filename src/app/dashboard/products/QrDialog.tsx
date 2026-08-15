@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Icon } from "@/components/Icon";
+import { useDialog } from "@/components/useDialog";
 import { t, type Lang } from "@/lib/i18n";
 
 export function QrDialog({
@@ -27,14 +27,7 @@ export function QrDialog({
     router.push("/dashboard/products");
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") close();
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const panelRef = useDialog(close);
 
   return (
     <div
@@ -44,6 +37,7 @@ export function QrDialog({
       }}
     >
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={d.dash.productQr}

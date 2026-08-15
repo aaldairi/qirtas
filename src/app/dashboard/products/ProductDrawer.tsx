@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -10,6 +10,7 @@ import {
   uploadProductImage,
 } from "@/app/actions/products";
 import { Icon } from "@/components/Icon";
+import { useDialog } from "@/components/useDialog";
 import { t, type Lang } from "@/lib/i18n";
 import { parsePrice } from "@/lib/money";
 import type { Category, ProductWithVariants } from "@/lib/types";
@@ -62,26 +63,12 @@ export function ProductDrawer({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState("");
-  const panelRef = useRef<HTMLDivElement>(null);
 
   function close() {
     router.push("/dashboard/products");
   }
 
-  // Escape closes, and focus starts inside the panel rather than behind it.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") close();
-    }
-    document.addEventListener("keydown", onKey);
-    panelRef.current?.querySelector<HTMLInputElement>("input")?.focus();
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const panelRef = useDialog(close);
 
   async function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

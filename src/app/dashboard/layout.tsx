@@ -48,7 +48,7 @@ export default async function DashboardLayout({
             </span>
             <span
               dir="ltr"
-              className="truncate font-mono text-[10px] text-mute-2"
+              className="truncate font-mono text-[10px] text-mute-ink"
             >
               {storeUrl}
             </span>
@@ -76,7 +76,7 @@ export default async function DashboardLayout({
               <span className="truncate text-xs text-paper">
                 {shop.owner_name || email}
               </span>
-              <span className="font-mono text-[10px] text-mute-2">
+              <span className="font-mono text-[10px] text-mute-ink">
                 {d.dash.owner}
               </span>
             </span>

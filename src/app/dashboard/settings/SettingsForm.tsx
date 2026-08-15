@@ -245,8 +245,14 @@ export function SettingsForm({
         >
           {pending ? d.common.saving : d.common.save}
         </button>
+        <span role="status" aria-live="polite" className="sr-only">
+          {saved ? d.dash.saved : ""}
+        </span>
         {saved ? (
-          <span className="flex items-center gap-1.5 text-[13px] font-medium text-ok-ink animate-pop">
+          <span
+            aria-hidden="true"
+            className="flex items-center gap-1.5 text-[13px] font-medium text-ok-ink animate-pop"
+          >
             <Icon name="check_circle" size={17} className="text-ok" />
             {d.dash.saved}
           </span>

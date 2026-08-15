@@ -219,7 +219,7 @@ export default async function MarketingPage() {
         <section id="features" className="bg-ink text-paper">
           <div className="mx-auto max-w-[1180px] px-7 py-16 md:py-24">
             <header className="mb-11 flex max-w-[620px] flex-col gap-3">
-              <span className="font-mono text-xs text-mute-2">
+              <span className="font-mono text-xs text-mute-ink">
                 {m.featEyebrow}
               </span>
               <h2 className="text-[30px] font-extrabold leading-[1.15] tracking-[-0.03em] text-paper text-pretty md:text-[38px]">
@@ -323,7 +323,11 @@ export default async function MarketingPage() {
                     >
                       {price}
                     </span>
-                    <span className="font-mono text-xs text-mute-2">
+                    <span
+                      className={`font-mono text-xs ${
+                        popular ? "text-mute-ink" : "text-mute-2"
+                      }`}
+                    >
                       {period}
                     </span>
                   </div>

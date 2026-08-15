@@ -225,6 +225,8 @@ export function OrderDetail({
 
       {decided ? (
         <div
+          role="status"
+          aria-live="polite"
           className={`flex items-center gap-2.5 rounded-[13px] border p-3.5 ${
             order.status === "PAID"
               ? "border-ok-line bg-ok-soft"

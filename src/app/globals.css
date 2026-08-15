@@ -5,11 +5,15 @@
   --color-ink: #1a1917;
   --color-ink-2: #32302a;
   --color-ink-3: #3d3a34;
-  --color-mute: #6e6a60;
-  --color-mute-2: #8c8578;
+  --color-mute: #6b675d;
+  --color-mute-2: #6c665c;
   --color-mute-3: #a5a094;
-  --color-mute-4: #a6a092;
-  --color-mute-5: #b6b0a3;
+  /* Muted text on ink surfaces. Kept light on purpose: darkening it the way
+     the light-surface tokens were darkened would REDUCE contrast on dark
+     backgrounds. 4.8:1 on --color-ink. */
+  --color-mute-ink: #8c8578;
+  --color-mute-4: #6a665d;
+  --color-mute-5: #89847a;
   --color-line: #e4e0d6;
   --color-line-2: #d6d1c6;
   --color-line-3: #efece4;

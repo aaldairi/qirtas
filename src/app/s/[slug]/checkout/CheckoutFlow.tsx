@@ -331,7 +331,7 @@ export function CheckoutFlow({
             <>
               <div className="flex flex-col gap-3.5 rounded-[18px] bg-ink p-4.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] tracking-[0.14em] text-mute-2">
+                  <span className="font-mono text-[10px] tracking-[0.14em] text-mute-ink">
                     {d.shop.transferTo}
                   </span>
                   <span className="num text-[15px] font-medium text-paper">
@@ -348,7 +348,7 @@ export function CheckoutFlow({
                       className="flex cursor-pointer items-center gap-2.5 rounded-[11px] bg-white/7 p-3 text-start"
                     >
                       <span className="flex min-w-0 flex-1 flex-col gap-1">
-                        <span className="font-mono text-[9px] tracking-[0.1em] text-mute-2">
+                        <span className="font-mono text-[9px] tracking-[0.1em] text-mute-ink">
                           {f.label}
                         </span>
                         <span
@@ -364,7 +364,7 @@ export function CheckoutFlow({
                         name={copied === f.key ? "check" : "content_copy"}
                         size={18}
                         className={
-                          copied === f.key ? "text-ok-line" : "text-mute-2"
+                          copied === f.key ? "text-ok-line" : "text-mute-ink"
                         }
                       />
                     </button>

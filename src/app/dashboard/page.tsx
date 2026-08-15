@@ -110,7 +110,11 @@ export default async function DashboardHome() {
                   size={19}
                   className={c.dark ? "text-paper" : c.accent}
                 />
-                <span className="font-mono text-[11px] text-mute-2">
+                <span
+                  className={`font-mono text-[11px] ${
+                    c.dark ? "text-mute-ink" : "text-mute-2"
+                  }`}
+                >
                   {c.label}
                 </span>
               </div>

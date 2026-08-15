@@ -124,9 +124,9 @@ export function BuyPanel({
         </button>
       </div>
 
-      {note ? (
-        <p className="font-mono text-[11px] text-warn-ink">{note}</p>
-      ) : null}
+      <p role="status" aria-live="polite" className="font-mono text-[11px] text-warn-ink">
+        {note}
+      </p>
 
       <div className="flex gap-2.5">
         <button
@@ -147,8 +147,15 @@ export function BuyPanel({
         </button>
       </div>
 
+      {/* Announced, not just shown: adding to cart gives no other feedback. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {toast}
+      </p>
       {toast ? (
-        <p className="flex items-center gap-2 rounded-xl border border-ok-line bg-ok-soft px-3.5 py-3 text-xs font-medium text-ok-ink animate-pop">
+        <p
+          aria-hidden="true"
+          className="flex items-center gap-2 rounded-xl border border-ok-line bg-ok-soft px-3.5 py-3 text-xs font-medium text-ok-ink animate-pop"
+        >
           <Icon name="check_circle" size={17} className="text-ok" />
           <span>{toast}</span>
         </p>
