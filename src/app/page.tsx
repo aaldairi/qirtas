@@ -99,8 +99,8 @@ export default async function MarketingPage() {
             </div>
 
             {/* phone mock */}
-            <div className="flex justify-center rounded-[28px] bg-sand p-8 md:p-10">
-              <div className="flex w-[290px] flex-col gap-4 rounded-[30px] border border-line bg-paper p-5.5 shadow-[0_30px_60px_-34px_rgba(26,25,23,.45)]">
+            <div className="flex justify-center rounded-[28px] bg-sand p-4 sm:p-8 md:p-10">
+              <div className="flex w-full max-w-[290px] flex-col gap-4 rounded-[30px] border border-line bg-paper p-5.5 shadow-[0_30px_60px_-34px_rgba(26,25,23,.45)]">
                 <div className="flex items-center justify-between font-mono text-[11px] text-mute-2">
                   <span>9:41</span>
                   <Icon name="battery_full" size={14} />
@@ -192,7 +192,7 @@ export default async function MarketingPage() {
             </div>
 
             <div className="flex justify-center">
-              <div className="flex w-[300px] flex-col items-center gap-4 rounded-3xl border border-line bg-paper p-7 shadow-[0_24px_50px_-34px_rgba(26,25,23,.5)]">
+              <div className="flex w-full max-w-[300px] flex-col items-center gap-4 rounded-3xl border border-line bg-paper p-7 shadow-[0_24px_50px_-34px_rgba(26,25,23,.5)]">
                 <span className="text-center text-base font-medium leading-[1.3]">
                   {m.demoName}
                 </span>
