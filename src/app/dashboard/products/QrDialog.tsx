@@ -33,6 +33,7 @@ export function QrDialog({
 
   const panelRef = useDialog(close);
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   /**
    * On iOS a plain <a download> always lands in Files, never the photo
@@ -98,12 +99,32 @@ export function QrDialog({
           </span>
         </div>
 
-        <p
-          dir="ltr"
-          className="w-full break-all rounded-xl border border-line bg-soft p-3 text-center font-mono text-[11px] leading-[1.5] text-mute"
+        {/* Copyable because this same URL is what gets written to an NFC tag,
+            and it is far too long to retype accurately. */}
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard?.writeText(url).catch(() => {});
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+          }}
+          className="flex w-full cursor-pointer items-center gap-2 rounded-xl border border-line bg-soft p-3 text-start transition-colors hover:border-ink"
         >
-          {url}
-        </p>
+          <span
+            dir="ltr"
+            className="num min-w-0 flex-1 break-all text-[11px] leading-[1.5] text-mute"
+          >
+            {url}
+          </span>
+          <Icon
+            name={copied ? "check" : "content_copy"}
+            size={16}
+            className={`shrink-0 ${copied ? "text-ok" : "text-mute-2"}`}
+          />
+        </button>
+        <span role="status" aria-live="polite" className="sr-only">
+          {copied ? d.common.copied : ""}
+        </span>
 
         <div className="flex w-full gap-2.5">
           <button
