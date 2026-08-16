@@ -32,17 +32,31 @@ export async function generateMetadata(props: {
 }
 
 /** One scan per visitor per product per day; the unique index does the rest. */
-async function recordScan(shopId: string, productId: string, visitor: string) {
+async function recordScan(
+  shopId: string,
+  productId: string,
+  visitor: string,
+  source: "qr" | "nfc" | "link",
+) {
   const db = createAdminClient();
-  await db
-    .from("scan_events")
-    .insert({ shop_id: shopId, product_id: productId, visitor });
+  const row = { shop_id: shopId, product_id: productId, visitor };
+
+  const { error } = await db.from("scan_events").insert({ ...row, source });
+
+  // A database that has not had the source column added yet would reject
+  // every insert and silently stop counting scans. Fall back rather than
+  // lose the data; it starts recording sources once the schema is applied.
+  if (error && /source/i.test(error.message)) {
+    await db.from("scan_events").insert(row);
+  }
 }
 
 export default async function ProductPage(props: {
   params: Promise<{ slug: string; id: string }>;
+  searchParams: Promise<{ via?: string }>;
 }) {
   const { slug, id } = await props.params;
+  const { via } = await props.searchParams;
   const shop = await getShopBySlug(slug);
   if (!shop) notFound();
 
@@ -75,7 +89,8 @@ export default async function ProductPage(props: {
   if (visitor) {
     after(async () => {
       try {
-        await recordScan(shop.id, product.id, visitor);
+        const source = via === "nfc" ? "nfc" : via === "qr" ? "qr" : "link";
+        await recordScan(shop.id, product.id, visitor, source);
       } catch {
         // Duplicate scan for today, or a transient DB blip. Neither matters.
       }

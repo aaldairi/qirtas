@@ -226,6 +226,30 @@ export async function getStats(shopId: string): Promise<DashboardStats> {
   };
 }
 
+export type ScanBreakdown = { qr: number; nfc: number; link: number };
+
+/**
+ * How customers reached products: scanned code, tapped tag, or plain link.
+ * Returns zeros if the source column has not been added yet, rather than
+ * failing the whole dashboard.
+ */
+export async function getScanBreakdown(shopId: string): Promise<ScanBreakdown> {
+  const db = createAdminClient();
+  const { data, error } = await db
+    .from("scan_events")
+    .select("source")
+    .eq("shop_id", shopId);
+
+  const totals: ScanBreakdown = { qr: 0, nfc: 0, link: 0 };
+  if (error) return totals;
+
+  for (const row of (data ?? []) as { source: string | null }[]) {
+    const key = (row.source ?? "link") as keyof ScanBreakdown;
+    if (key in totals) totals[key] += 1;
+  }
+  return totals;
+}
+
 /** Real scan counts per product, highest first. No synthetic numbers. */
 export async function getScanCounts(
   shopId: string,

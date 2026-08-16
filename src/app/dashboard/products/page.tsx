@@ -33,7 +33,7 @@ export default async function ProductsPage(props: {
       : products.filter((p) => p.category_id === catFilter);
 
   const qrs = await Promise.all(
-    visible.map((p) => qrDataUrl(productUrl(shop.slug, p.id), 120)),
+    visible.map((p) => qrDataUrl(productUrl(shop.slug, p.id, "qr"), 120)),
   );
 
   // Drawer + QR dialog are driven by the URL so both are shareable and the
@@ -43,7 +43,7 @@ export default async function ProductsPage(props: {
 
   const qrProduct = search.qr ? await getProduct(shop.id, search.qr) : null;
   const qrBig = qrProduct
-    ? await qrDataUrl(productUrl(shop.slug, qrProduct.id), 640)
+    ? await qrDataUrl(productUrl(shop.slug, qrProduct.id, "qr"), 640)
     : null;
 
   const filters = [{ id: "all", name: d.common.all }, ...categories];
@@ -218,7 +218,7 @@ export default async function ProductsPage(props: {
           lang={lang}
           name={qrProduct.name}
           price={money(qrProduct.price)}
-          url={productUrl(shop.slug, qrProduct.id)}
+          url={productUrl(shop.slug, qrProduct.id, "nfc")}
           qr={qrBig}
           downloadHref={`/qr/${shop.slug}/${qrProduct.id}.png`}
         />

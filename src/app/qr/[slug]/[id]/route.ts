@@ -27,7 +27,7 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const png = await qrPng(productUrl(slug, product.id));
+  const png = await qrPng(productUrl(slug, product.id, "qr"));
   const filename =
     (product.sku || product.name)
       .toLowerCase()

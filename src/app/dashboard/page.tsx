@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
 import {
+  getScanBreakdown,
   getScanCounts,
   getStats,
   listOrders,
@@ -20,11 +21,12 @@ export default async function DashboardHome() {
   const lang = await getLang();
   const d = t(lang);
 
-  const [stats, orders, products, scans] = await Promise.all([
+  const [stats, orders, products, scans, viaBreakdown] = await Promise.all([
     getStats(shop.id),
     listOrders(shop.id),
     listProducts(shop.id),
     getScanCounts(shop.id),
+    getScanBreakdown(shop.id),
   ]);
 
   const attention = orders.filter(
@@ -38,7 +40,7 @@ export default async function DashboardHome() {
     .filter((row) => row.count > 0);
 
   const topQrs = await Promise.all(
-    topScanned.map((row) => qrDataUrl(productUrl(shop.slug, row.product.id), 120)),
+    topScanned.map((row) => qrDataUrl(productUrl(shop.slug, row.product.id, "qr"), 120)),
   );
 
   const cards = [
@@ -73,6 +75,15 @@ export default async function DashboardHome() {
       unit: "",
       dark: false,
       accent: "text-ink",
+      // Only worth showing once something has actually been tapped or scanned.
+      breakdown:
+        viaBreakdown.qr + viaBreakdown.nfc > 0
+          ? ([
+              [d.dash.viaQr, viaBreakdown.qr],
+              [d.dash.viaNfc, viaBreakdown.nfc],
+              [d.dash.viaLink, viaBreakdown.link],
+            ].filter(([, n]) => (n as number) > 0) as [string, number][])
+          : null,
     },
   ];
 
@@ -128,6 +139,15 @@ export default async function DashboardHome() {
                   <span className="font-mono text-xs text-mute-2">{c.unit}</span>
                 ) : null}
               </div>
+              {c.breakdown ? (
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {c.breakdown.map(([label, n]) => (
+                    <span key={label} className="font-mono text-[10px] text-mute-2">
+                      {label} <span className="num text-ink-3">{n}</span>
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

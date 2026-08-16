@@ -101,6 +101,15 @@ alter table public.scan_events
   add column if not exists scan_day date not null
   default (timezone('utc', now()))::date;
 
+-- How the customer reached the product: a scanned QR, a tapped NFC tag, or
+-- a plain link. Lets a shop see whether tags are worth their cost.
+alter table public.scan_events
+  add column if not exists source text not null default 'link';
+
+alter table public.scan_events drop constraint if exists scan_events_source_check;
+alter table public.scan_events add constraint scan_events_source_check
+  check (source in ('qr', 'nfc', 'link'));
+
 create index if not exists scans_shop_idx on public.scan_events(shop_id, created_at desc);
 create index if not exists scans_product_idx on public.scan_events(product_id);
 -- one scan counted per visitor per product per day

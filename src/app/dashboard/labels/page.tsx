@@ -18,7 +18,7 @@ export default async function LabelsPage() {
 
   const products = await listProducts(shop.id, { onlyActive: true });
   const qrs = await Promise.all(
-    products.map((p) => qrDataUrl(productUrl(shop.slug, p.id), 400)),
+    products.map((p) => qrDataUrl(productUrl(shop.slug, p.id, "qr"), 400)),
   );
 
   return (
