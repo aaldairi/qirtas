@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { updateShop } from "@/app/actions/shop";
+import { checkSlug, updateShop, updateSlug } from "@/app/actions/shop";
 import { Icon } from "@/components/Icon";
 import { PaymentMethods, type PayState } from "@/components/PaymentMethods";
 import { t, type Lang } from "@/lib/i18n";
 import { parsePrice } from "@/lib/money";
+import { slugify } from "@/lib/slug";
 import type { Shop } from "@/lib/types";
 
 export function SettingsForm({
@@ -32,6 +33,10 @@ export function SettingsForm({
   const [delivery, setDelivery] = useState(shop.delivery_on);
   const [fee, setFee] = useState(Number(shop.delivery_fee).toFixed(3));
   const [copied, setCopied] = useState(false);
+  const [slugOpen, setSlugOpen] = useState(false);
+  const [slug, setSlug] = useState(shop.slug);
+  const [slugState, setSlugState] = useState<"idle" | "ok" | "taken" | "invalid">("idle");
+  const [slugSaved, setSlugSaved] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
@@ -152,6 +157,80 @@ export function SettingsForm({
               </a>
             </div>
           </div>
+
+          {slugOpen ? (
+            <div className="flex flex-col gap-2.5 rounded-[13px] border border-warn-soft bg-warn-soft/40 p-3.5">
+              <p className="text-[11px] leading-[1.5] text-warn-ink text-pretty">
+                {d.dash.changeLinkWarn}
+              </p>
+              <div className="flex items-center overflow-hidden rounded-[11px] border border-line-2 bg-white focus-within:border-ink">
+                <span dir="ltr" className="shrink-0 border-e border-line bg-soft px-3 py-3 font-mono text-[11px] text-mute-2">
+                  /s/
+                </span>
+                <input
+                  value={slug}
+                  dir="ltr"
+                  aria-label={d.dash.storeLink}
+                  onChange={(e) => {
+                    const next = slugify(e.target.value);
+                    setSlug(next);
+                    setSlugState("idle");
+                    if (next && next !== shop.slug) {
+                      checkSlug(next).then(setSlugState).catch(() => setSlugState("idle"));
+                    }
+                  }}
+                  className="w-full min-w-0 border-0 bg-transparent px-3 py-3 font-mono text-[13px] outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  disabled={pending || (slug !== shop.slug && slugState !== "ok")}
+                  onClick={() =>
+                    start(async () => {
+                      const result = await updateSlug(slug);
+                      if (result.ok) {
+                        setSlugSaved(true);
+                        setSlugOpen(false);
+                        router.refresh();
+                      } else {
+                        setError(
+                          result.error === "slugTaken"
+                            ? d.onboarding.slugTaken
+                            : d.onboarding.slugInvalid,
+                        );
+                      }
+                    })
+                  }
+                  className="btn btn-ink !py-2.5 text-xs"
+                >
+                  {d.common.save}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSlug(shop.slug); setSlugOpen(false); }}
+                  className="btn btn-ghost !py-2.5 text-xs"
+                >
+                  {d.common.cancel}
+                </button>
+                {slug !== shop.slug && slugState === "taken" ? (
+                  <span className="text-[11px] text-bad-ink">{d.onboarding.slugTaken}</span>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setSlugOpen(true)}
+              className="self-start text-[11px] font-medium text-brand underline underline-offset-4"
+            >
+              {d.dash.changeLink}
+            </button>
+          )}
+
+          <span role="status" aria-live="polite" className="sr-only">
+            {slugSaved ? d.dash.linkUpdated : ""}
+          </span>
 
           <label className="flex flex-col gap-2">
             <span className="label">{d.dash.whatsapp}</span>

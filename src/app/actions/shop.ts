@@ -132,6 +132,37 @@ export async function updateShop(
   return { ok: true };
 }
 
+/**
+ * Changing the store link breaks every QR label already printed against the
+ * old one, so this is deliberately a separate action from the rest of
+ * settings — the UI warns before calling it.
+ */
+export async function updateSlug(raw: string): Promise<ActionResult> {
+  const { shop } = await requireShop();
+  const slug = raw.trim().toLowerCase();
+
+  if (slug === shop.slug) return { ok: true };
+  if (!isValidSlug(slug) || isReservedSlug(slug)) {
+    return { ok: false, error: "slugInvalid" };
+  }
+
+  const db = createAdminClient();
+  const { error } = await db
+    .from("shops")
+    .update({ slug })
+    .eq("id", shop.id);
+
+  if (error) {
+    if (error.code === "23505") return { ok: false, error: "slugTaken" };
+    return { ok: false, error: "somethingWrong" };
+  }
+
+  revalidatePath("/dashboard", "layout");
+  revalidatePath(`/s/${shop.slug}`, "layout");
+  revalidatePath(`/s/${slug}`, "layout");
+  return { ok: true };
+}
+
 export async function checkSlug(slug: string): Promise<"ok" | "taken" | "invalid"> {
   const value = slug.trim().toLowerCase();
   if (!isValidSlug(value) || isReservedSlug(value)) return "invalid";

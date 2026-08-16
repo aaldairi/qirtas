@@ -13,12 +13,14 @@ export function QrDialog({
   price,
   url,
   qr,
+  downloadHref,
 }: {
   lang: Lang;
   name: string;
   price: string;
   url: string;
   qr: string;
+  downloadHref: string;
 }) {
   const d = t(lang);
   const router = useRouter();
@@ -64,8 +66,8 @@ export function QrDialog({
 
         <div className="flex w-full gap-2.5">
           <a
-            href={qr}
-            download={`qr-${name.replace(/\s+/g, "-").toLowerCase()}.png`}
+            href={downloadHref}
+            download
             className="btn btn-ghost flex-1"
           >
             <Icon name="download" size={17} />

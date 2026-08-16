@@ -220,6 +220,7 @@ export default async function ProductsPage(props: {
           price={money(qrProduct.price)}
           url={productUrl(shop.slug, qrProduct.id)}
           qr={qrBig}
+          downloadHref={`/qr/${shop.slug}/${qrProduct.id}.png`}
         />
       ) : null}
     </>
