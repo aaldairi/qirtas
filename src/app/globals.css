@@ -92,6 +92,14 @@
     unicode-bidi: isolate;
   }
 
+  /* An IBAN, amount or SKU must keep Latin character order, so .num forces
+     direction: ltr — which also makes its text align to ITS start, the left,
+     even in an Arabic column. Characters stay LTR; the block sits right,
+     matching everything around it. Inline .num spans are unaffected. */
+  [dir="rtl"] .num {
+    text-align: right;
+  }
+
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
