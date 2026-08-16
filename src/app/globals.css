@@ -105,6 +105,9 @@
 }
 
 @layer components {
+  /* Note: direction:ltr below keeps the ligature name from being reordered
+     in RTL, but it also makes logical properties (me-*, ms-*, ps-*, pe-*)
+     on the icon itself resolve against LTR. Put spacing on a parent. */
   .ms {
     font-family: "Material Symbols Rounded";
     font-weight: 400;

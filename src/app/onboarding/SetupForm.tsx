@@ -125,13 +125,17 @@ export function SetupForm({ lang, origin }: { lang: Lang; origin: string }) {
               className="w-full min-w-0 border-0 bg-transparent px-3 py-3.5 font-mono text-[13px] text-ink outline-none"
             />
             {slug && slugState !== "idle" ? (
-              <Icon
-                name={slugState === "ok" ? "check_circle" : "error"}
-                size={18}
-                className={`me-3 shrink-0 ${
-                  slugState === "ok" ? "text-ok" : "text-bad"
-                }`}
-              />
+              // Spacing lives on this wrapper, not the icon. The .ms class
+              // forces direction: ltr for ligature rendering, so a logical
+              // margin on the icon itself resolves against LTR and lands on
+              // the wrong side in Arabic — leaving the tick 1px from the edge.
+              <span className="flex shrink-0 items-center pe-3">
+                <Icon
+                  name={slugState === "ok" ? "check_circle" : "error"}
+                  size={18}
+                  className={slugState === "ok" ? "text-ok" : "text-bad"}
+                />
+              </span>
             ) : null}
           </div>
           <span
