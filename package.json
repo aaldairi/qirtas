@@ -11,7 +11,8 @@
     "db:apply": "docker exec -i supabase_db_$(basename $PWD) psql -U postgres -d postgres -v ON_ERROR_STOP=1 < supabase/schema.sql",
     "test": "node --test --experimental-strip-types \"src/**/*.test.ts\"",
     "check": "npm run typecheck && npm run test && npm run build",
-    "provision": "node scripts/provision.mjs"
+    "provision": "node scripts/provision.mjs",
+    "import": "node scripts/import-products.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

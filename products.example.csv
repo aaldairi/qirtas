@@ -1,0 +1,4 @@
+name,price,stock,sku,category,track,variants,description
+Pin,1.200,500,PIN-01,Pens,yes,,قلم حبر
+A5 Dotted Notebook,3.200,24,NB-A5-DOT,Notebooks,yes,Kraft:12|Navy:8,160gsm dotted paper
+Kraft File Folder,1.100,60,FL-KRF-A4,Paper,yes,,A4 recycled kraft folder

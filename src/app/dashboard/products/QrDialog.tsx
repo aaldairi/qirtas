@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -30,6 +32,45 @@ export function QrDialog({
   }
 
   const panelRef = useDialog(close);
+  const [saving, setSaving] = useState(false);
+
+  /**
+   * On iOS a plain <a download> always lands in Files, never the photo
+   * library, and there is no web API to write to Photos directly. Handing the
+   * PNG to the system share sheet gives the "Save Image" action, which does.
+   * Desktop browsers have no share target for files, so they fall back to the
+   * ordinary download.
+   */
+  async function saveImage() {
+    setSaving(true);
+    try {
+      const response = await fetch(downloadHref);
+      const blob = await response.blob();
+      const file = new File([blob], `qr-${name.replace(/\s+/g, "-").toLowerCase()}.png`, {
+        type: "image/png",
+      });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: name });
+        return;
+      }
+
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = file.name;
+      link.click();
+      URL.revokeObjectURL(href);
+    } catch (error) {
+      // Cancelling the share sheet rejects with AbortError; that is not a
+      // failure and should not surface as one.
+      if ((error as Error)?.name !== "AbortError") {
+        window.open(downloadHref, "_blank", "noopener");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div
@@ -65,14 +106,15 @@ export function QrDialog({
         </p>
 
         <div className="flex w-full gap-2.5">
-          <a
-            href={downloadHref}
-            download
+          <button
+            type="button"
+            onClick={saveImage}
+            disabled={saving}
             className="btn btn-ghost flex-1"
           >
-            <Icon name="download" size={17} />
-            <span>{d.dash.download}</span>
-          </a>
+            <Icon name={saving ? "progress_activity" : "download"} size={17} />
+            <span>{saving ? d.dash.saving : d.dash.saveImage}</span>
+          </button>
           <Link href="/dashboard/labels" className="btn btn-primary flex-1">
             <Icon name="print" size={17} />
             <span>{d.dash.labelSheet}</span>

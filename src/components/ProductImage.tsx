@@ -2,7 +2,10 @@ const PLACEHOLDER =
   "bg-[repeating-linear-gradient(135deg,#e7e3d9_0_8px,#f3f0e9_8px_16px)]";
 
 function publicUrl(path: string) {
-  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/product-images/${path}`;
+  // A trailing slash on the configured URL would produce a double slash and
+  // a 400 from storage, so normalise it.
+  const base = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/product-images/${path}`;
 }
 
 /**

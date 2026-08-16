@@ -60,6 +60,7 @@ export function ProductDrawer({
       : null,
   );
   const [uploading, setUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState("");
@@ -75,9 +76,17 @@ export function ProductDrawer({
     e.target.value = "";
     if (!file) return;
 
+    // A new product has no row to attach the file to yet, so hold it and
+    // upload once the product is created. Blocking here meant a photo could
+    // never be added while creating a product, only by editing afterwards.
     if (!product) {
-      // Nothing to attach the file to until the row exists.
-      setError(lang === "ar" ? "احفظ المنتج أولاً لإضافة صورة" : "Save the product first to add a photo");
+      if (file.size > 5 * 1024 * 1024) return setError(d.dash.imageTooBig);
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+        return setError(d.dash.imageBadType);
+      }
+      setPendingFile(file);
+      setImageUrl(URL.createObjectURL(file));
+      setError("");
       return;
     }
 
@@ -166,6 +175,14 @@ export function ProductDrawer({
         return;
       }
 
+      // Attach the photo staged before the product existed.
+      if (pendingFile) {
+        const body = new FormData();
+        body.set("productId", result.id);
+        body.set("file", pendingFile);
+        await uploadProductImage(body);
+      }
+
       // New products land on their QR straight away — that's the whole point
       // of saving one.
       router.push(
@@ -246,14 +263,18 @@ export function ProductDrawer({
                     <button
                       type="button"
                       aria-label={d.dash.removePhoto}
-                      onClick={() =>
-                        product &&
+                      onClick={() => {
+                        if (!product) {
+                          setPendingFile(null);
+                          setImageUrl(null);
+                          return;
+                        }
                         start(async () => {
                           await removeProductImage(product.id);
                           setImageUrl(null);
                           router.refresh();
-                        })
-                      }
+                        });
+                      }}
                       className="absolute end-1 top-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-ink/75 text-paper"
                     >
                       <Icon name="close" size={14} />
