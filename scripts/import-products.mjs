@@ -20,6 +20,13 @@
  *   description optional
  *   status    optional   draft/live. A row with no price is forced to draft:
  *                        a published product at 0.000 can be ordered for free.
+ * Photos can also come from a local folder instead of URLs:
+ *
+ *   IMAGES=./photos SHOP="..." SUPABASE_ACCESS_TOKEN=sbp_xxx npm run import -- products.csv
+ *
+ * Files are matched to products by filename: 6900202500015.jpg attaches to the
+ * product with that SKU. Shoot them on a phone, name them by barcode, done.
+ *
  *   image_url optional   a public https URL. Downloaded and re-hosted in your
  *                        own storage, so the listing does not break when
  *                        someone else's server goes away. Use images you are
@@ -29,13 +36,15 @@
  * rather than creating a duplicate, so a corrected file can be re-run.
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { extname, join, basename } from "node:path";
 
 const API = "https://api.supabase.com/v1";
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 const PROJECT_NAME = process.env.SUPABASE_PROJECT_NAME ?? "qirtas";
 const SHOP = process.env.SHOP;
 
+const IMAGES_DIR = process.env.IMAGES;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
@@ -255,9 +264,28 @@ async function main() {
     }
   }
 
+  // Index a local photo folder by SKU, so a phone-shot library can be
+  // attached in bulk without editing the CSV at all.
+  const localImages = new Map();
+  if (IMAGES_DIR) {
+    step(`Indexing photos in ${IMAGES_DIR}`);
+    for (const entry of readdirSync(IMAGES_DIR)) {
+      const full = join(IMAGES_DIR, entry);
+      if (!statSync(full).isFile()) continue;
+      const ext = extname(entry).toLowerCase();
+      if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) continue;
+      localImages.set(basename(entry, extname(entry)).trim().toLowerCase(), full);
+    }
+    const matched = parsed.filter((p) => p.sku && localImages.has(p.sku.toLowerCase())).length;
+    log(`${localImages.size} photo(s) found, ${matched} match a SKU in the file`);
+    if (matched === 0) {
+      log("nothing matched — name each file after its barcode, e.g. 6900202500015.jpg");
+    }
+  }
+
   // The service key is only needed when images are involved.
   let SERVICE_KEY = null;
-  if (parsed.some((p) => p.imageUrl)) {
+  if (parsed.some((p) => p.imageUrl) || localImages.size) {
     const keys = await api(`/projects/${REF}/api-keys`);
     SERVICE_KEY = keys.find((k) => k.name === "service_role")?.api_key;
     if (!SERVICE_KEY) die("Could not read the service_role key needed to upload images.");
@@ -305,7 +333,39 @@ async function main() {
 
     // Images last: a failure here should not cost us the product row.
     let imageNote = "";
-    if (p.imageUrl) {
+    const localPath = p.sku ? localImages.get(p.sku.toLowerCase()) : null;
+
+    if (localPath) {
+      const bytes = new Uint8Array(readFileSync(localPath));
+      const ext = extname(localPath).toLowerCase().replace(".", "").replace("jpeg", "jpg");
+      const type = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+      if (bytes.byteLength > MAX_IMAGE_BYTES) {
+        imageNote = "  photo skipped (larger than 5 MB)";
+        imageProblems.push(`${p.name}: local file larger than 5 MB`);
+      } else {
+        const path = `${shop.id}/${id}.${ext}`;
+        const upload = await fetch(
+          `https://${REF}.supabase.co/storage/v1/object/product-images/${path}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SERVICE_KEY}`,
+              "Content-Type": type,
+              "x-upsert": "true",
+            },
+            body: bytes,
+          },
+        );
+        if (upload.ok) {
+          await sql(`update public.products set image_path = ${q(path)} where id = ${q(id)};`);
+          imageNote = "  + photo";
+          imagesLoaded++;
+        } else {
+          imageNote = `  photo upload failed (${upload.status})`;
+          imageProblems.push(`${p.name}: upload ${upload.status}`);
+        }
+      }
+    } else if (p.imageUrl) {
       const img = await fetchImage(p.imageUrl);
       if (img.error) {
         imageNote = `  image skipped (${img.error})`;
