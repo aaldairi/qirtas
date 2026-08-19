@@ -14,6 +14,8 @@
  *   track     optional   yes/no, default yes
  *   variants  optional   "Kraft:12|Navy:8"
  *   description optional
+ *   status    optional   draft/live. A row with no price is forced to draft:
+ *                        a published product at 0.000 can be ordered for free.
  *
  * Idempotent on SKU: a row whose SKU already exists updates that product
  * rather than creating a duplicate, so a corrected file can be re-run.
@@ -130,7 +132,8 @@ async function main() {
   const problems = [];
   const parsed = rows.map((r) => {
     const name = r.name ?? "";
-    const price = Number(String(r.price ?? "").replace(/[^\d.]/g, ""));
+    const raw = String(r.price ?? "").replace(/[^\d.]/g, "");
+    const price = raw === "" ? 0 : Number(raw);
     if (!name) problems.push(`line ${r.__line}: missing name`);
     if (!Number.isFinite(price) || price < 0) {
       problems.push(`line ${r.__line}: invalid price "${r.price}"`);
@@ -147,6 +150,9 @@ async function main() {
       category: r.category || null,
       description: r.description || null,
       track: !/^(no|false|0)$/i.test(r.track ?? ""),
+      // Never publish something with no price — it would be orderable for
+      // free. Priced rows follow the status column, defaulting to live.
+      active: price > 0 && !/^(draft|no|false|0|hidden)$/i.test(r.status ?? ""),
       variants: (r.variants || "")
         .split("|")
         .map((v) => v.trim())
@@ -208,14 +214,15 @@ async function main() {
       await sql(`update public.products set
           name = ${q(p.name)}, price = ${p.price}, stock = ${p.stock},
           track_stock = ${p.track}, description = ${q(p.description)},
+          active = ${p.active},
           category_id = ${categoryId ? q(categoryId) : "null"}
         where id = ${q(id)} and shop_id = ${q(shop.id)};`);
       updated++;
     } else {
       const row = await sql(`insert into public.products
-          (shop_id, name, sku, price, stock, track_stock, description, category_id)
+          (shop_id, name, sku, price, stock, track_stock, description, category_id, active)
         values (${q(shop.id)}, ${q(p.name)}, ${q(p.sku)}, ${p.price}, ${p.stock},
-                ${p.track}, ${q(p.description)}, ${categoryId ? q(categoryId) : "null"})
+                ${p.track}, ${q(p.description)}, ${categoryId ? q(categoryId) : "null"}, ${p.active})
         returning id;`);
       id = row[0].id;
       created++;
@@ -227,12 +234,18 @@ async function main() {
                  values (${q(id)}, ${q(v.label)}, ${v.qty}, ${i});`);
     }
 
-    log(`${existing.length ? "updated" : "created"}  ${p.name}  ${p.price.toFixed(3)} BHD`);
+    log(
+      `${existing.length ? "updated" : "created"}  ${p.name}  ` +
+        `${p.price.toFixed(3)} BHD  ${p.active ? "live" : "draft"}`,
+    );
   }
 
+  const drafts = parsed.filter((p) => !p.active).length;
   const total = await sql("select count(*)::int as n from public.products;");
   console.log(
-    `\n✓ ${created} created, ${updated} updated — ${total[0].n} products in the shop\n` +
+    `\n✓ ${created} created, ${updated} updated — ${total[0].n} products in the shop` +
+      (drafts ? `\n  ${drafts} imported as drafts (no price) — hidden from customers` : "") +
+      `\n` +
       `  Storefront: https://qirtas-rho.vercel.app/s/${shop.slug}\n` +
       `  Labels:     https://qirtas-rho.vercel.app/dashboard/labels\n`,
   );

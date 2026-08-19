@@ -46,6 +46,8 @@ export function ProductDrawer({
   const [stock, setStock] = useState(product?.stock ?? 1);
   const [track, setTrack] = useState(product?.track_stock ?? true);
   const [desc, setDesc] = useState(product?.description ?? "");
+  // New products start published; imported drafts keep whatever they have.
+  const [active, setActive] = useState(product?.active ?? true);
   const [variants, setVariants] = useState<DraftVariant[]>(
     product?.product_variants?.map((v) => ({ label: v.label, qty: v.qty })) ?? [],
   );
@@ -162,6 +164,7 @@ export function ProductDrawer({
         stock,
         track_stock: track,
         description: desc.trim() || null,
+        active,
         variants,
       });
 
@@ -170,6 +173,7 @@ export function ProductDrawer({
           needName: d.dash.needName,
           needPrice: d.dash.needPrice,
           skuTaken: d.dash.skuTaken,
+          needPriceToPublish: d.dash.needPriceToPublish,
         };
         setError(messages[result.error] ?? d.common.somethingWrong);
         return;
@@ -445,6 +449,47 @@ export function ProductDrawer({
                   </span>
                 </button>
               </div>
+            </div>
+
+            {/* -------------------------------------------------- status */}
+            <div className="flex flex-col gap-2.5">
+              <span className="label">{d.dash.publishLabel}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={active}
+                onClick={() => setActive((v) => !v)}
+                className={`flex cursor-pointer items-center gap-2.5 rounded-[11px] border p-3 text-start transition-colors ${
+                  active ? "border-ink bg-white" : "border-line bg-soft"
+                }`}
+              >
+                <Icon
+                  name={active ? "visibility" : "visibility_off"}
+                  size={20}
+                  className={active ? "text-ok" : "text-mute-2"}
+                />
+                <span className="flex flex-1 flex-col gap-0.5">
+                  <span className="text-[13px] font-medium">
+                    {active ? d.dash.published : d.dash.draft}
+                  </span>
+                  <span className="text-[11px] leading-[1.4] text-mute-2">
+                    {active
+                      ? lang === "ar"
+                        ? "يظهر في المتجر ويمكن شراؤه"
+                        : "Visible in the store and purchasable"
+                      : lang === "ar"
+                        ? "مخفي عن العملاء"
+                        : "Hidden from customers"}
+                  </span>
+                </span>
+                <span
+                  className={`flex h-[23px] w-10 items-center rounded-[20px] p-0.5 transition-colors ${
+                    active ? "justify-end bg-ok" : "justify-start bg-line-2"
+                  }`}
+                >
+                  <span className="h-[19px] w-[19px] rounded-full bg-white" />
+                </span>
+              </button>
             </div>
 
             {/* ------------------------------------------------ variants */}

@@ -28,6 +28,7 @@ const productSchema = z.object({
   stock: z.number().int().min(0).max(1000000),
   track_stock: z.boolean(),
   description: z.string().trim().max(2000).nullable(),
+  active: z.boolean(),
   variants: z.array(variantSchema).max(30),
 });
 
@@ -43,6 +44,12 @@ export async function saveProduct(raw: ProductInput): Promise<ProductResult> {
   }
   const input = parsed.data;
 
+  // A published product at 0.000 is orderable for free. Draft is fine at any
+  // price; live is not.
+  if (input.active && input.price <= 0) {
+    return { ok: false, error: "needPriceToPublish" };
+  }
+
   const db = createAdminClient();
   const row = {
     shop_id: shop.id,
@@ -53,6 +60,7 @@ export async function saveProduct(raw: ProductInput): Promise<ProductResult> {
     stock: input.stock,
     track_stock: input.track_stock,
     description: input.description?.trim() || null,
+    active: input.active,
   };
 
   let productId = input.id;

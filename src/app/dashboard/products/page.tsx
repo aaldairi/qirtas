@@ -135,8 +135,15 @@ export default async function ProductsPage(props: {
                       className="h-11 w-11 rounded-md"
                     />
                     <div className="flex min-w-0 flex-col gap-1 pe-3">
-                      <span className="truncate text-sm font-medium">
-                        {p.name}
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">
+                          {p.name}
+                        </span>
+                        {!p.active ? (
+                          <span className="shrink-0 rounded-[20px] bg-sand px-2 py-0.5 font-mono text-[9px] text-mute">
+                            {d.dash.draft}
+                          </span>
+                        ) : null}
                       </span>
                       <span className="truncate font-mono text-[11px] text-mute-2">
                         {variantLine}
@@ -171,8 +178,15 @@ export default async function ProductsPage(props: {
                 >
                   <Link href={`/dashboard/products?edit=${p.id}`} className="min-w-0 flex-1">
                     <span className="flex min-w-0 flex-col gap-1">
-                      <span className="truncate text-sm font-medium">
-                        {p.name}
+                      <span className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium">
+                          {p.name}
+                        </span>
+                        {!p.active ? (
+                          <span className="shrink-0 rounded-[20px] bg-sand px-2 py-0.5 font-mono text-[9px] text-mute">
+                            {d.dash.draft}
+                          </span>
+                        ) : null}
                       </span>
                       <span className="num truncate text-[11px] text-mute-2">
                         {p.sku || "—"}
