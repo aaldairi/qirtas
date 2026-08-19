@@ -20,6 +20,10 @@
  *   description optional
  *   status    optional   draft/live. A row with no price is forced to draft:
  *                        a published product at 0.000 can be ordered for free.
+ *   image_url optional   a public https URL. Downloaded and re-hosted in your
+ *                        own storage, so the listing does not break when
+ *                        someone else's server goes away. Use images you are
+ *                        licensed to use — a supplier feed or your own photos.
  *
  * Idempotent on SKU: a row whose SKU already exists updates that product
  * rather than creating a duplicate, so a corrected file can be re-run.
@@ -31,6 +35,34 @@ const API = "https://api.supabase.com/v1";
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 const PROJECT_NAME = process.env.SUPABASE_PROJECT_NAME ?? "qirtas";
 const SHOP = process.env.SHOP;
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+/**
+ * Pull an image and put it in the shop's own storage bucket. Hotlinking a
+ * supplier URL would leave the catalogue silently broken the day they
+ * reorganise their site.
+ */
+async function fetchImage(url) {
+  if (!/^https:\/\//i.test(url)) return { error: "not an https URL" };
+  let res;
+  try {
+    res = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(20000) });
+  } catch {
+    return { error: "could not be fetched" };
+  }
+  if (!res.ok) return { error: `HTTP ${res.status}` };
+
+  const type = (res.headers.get("content-type") ?? "").split(";")[0].trim();
+  if (!IMAGE_TYPES.includes(type)) return { error: `unsupported type ${type || "unknown"}` };
+
+  const buf = new Uint8Array(await res.arrayBuffer());
+  if (buf.byteLength > MAX_IMAGE_BYTES) return { error: "larger than 5 MB" };
+  if (buf.byteLength === 0) return { error: "empty file" };
+
+  return { bytes: buf, type };
+}
 
 const log = (m) => console.log(`  ${m}`);
 const step = (m) => console.log(`\n▸ ${m}`);
@@ -175,6 +207,7 @@ async function main() {
       sku: r.sku || null,
       category: r.category || null,
       description: r.description || null,
+      imageUrl: (r.image_url || "").trim() || null,
       track: !/^(no|false|0)$/i.test(r.track ?? ""),
       // Never publish something with no price — it would be orderable for
       // free. Priced rows follow the status column, defaulting to live.
@@ -222,9 +255,19 @@ async function main() {
     }
   }
 
+  // The service key is only needed when images are involved.
+  let SERVICE_KEY = null;
+  if (parsed.some((p) => p.imageUrl)) {
+    const keys = await api(`/projects/${REF}/api-keys`);
+    SERVICE_KEY = keys.find((k) => k.name === "service_role")?.api_key;
+    if (!SERVICE_KEY) die("Could not read the service_role key needed to upload images.");
+  }
+
   step("Loading products");
   let created = 0;
   let updated = 0;
+  let imagesLoaded = 0;
+  const imageProblems = [];
 
   for (const p of parsed) {
     const categoryId = p.category ? categories.get(p.category) : null;
@@ -260,9 +303,42 @@ async function main() {
                  values (${q(id)}, ${q(v.label)}, ${v.qty}, ${i});`);
     }
 
+    // Images last: a failure here should not cost us the product row.
+    let imageNote = "";
+    if (p.imageUrl) {
+      const img = await fetchImage(p.imageUrl);
+      if (img.error) {
+        imageNote = `  image skipped (${img.error})`;
+        imageProblems.push(`${p.name}: ${img.error}`);
+      } else {
+        const ext = img.type === "image/png" ? "png" : img.type === "image/webp" ? "webp" : "jpg";
+        const path = `${shop.id}/${id}.${ext}`;
+        const upload = await fetch(
+          `https://${REF}.supabase.co/storage/v1/object/product-images/${path}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SERVICE_KEY}`,
+              "Content-Type": img.type,
+              "x-upsert": "true",
+            },
+            body: img.bytes,
+          },
+        );
+        if (upload.ok) {
+          await sql(`update public.products set image_path = ${q(path)} where id = ${q(id)};`);
+          imageNote = "  + photo";
+          imagesLoaded++;
+        } else {
+          imageNote = `  image upload failed (${upload.status})`;
+          imageProblems.push(`${p.name}: upload ${upload.status}`);
+        }
+      }
+    }
+
     log(
       `${existing.length ? "updated" : "created"}  ${p.name}  ` +
-        `${p.price.toFixed(3)} BHD  ${p.active ? "live" : "draft"}`,
+        `${p.price.toFixed(3)} BHD  ${p.active ? "live" : "draft"}${imageNote}`,
     );
   }
 
@@ -271,6 +347,10 @@ async function main() {
   console.log(
     `\n✓ ${created} created, ${updated} updated — ${total[0].n} products in the shop` +
       (drafts ? `\n  ${drafts} imported as drafts (no price) — hidden from customers` : "") +
+      (imagesLoaded ? `\n  ${imagesLoaded} photo(s) downloaded and re-hosted` : "") +
+      (imageProblems.length
+        ? `\n  ${imageProblems.length} photo(s) skipped:\n    ` + imageProblems.slice(0, 8).join("\n    ")
+        : "") +
       `\n` +
       `  Storefront: https://qirtas-rho.vercel.app/s/${shop.slug}\n` +
       `  Labels:     https://qirtas-rho.vercel.app/dashboard/labels\n`,
