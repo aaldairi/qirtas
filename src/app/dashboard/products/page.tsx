@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { PageHeader } from "@/components/PageHeader";
+import { ProductImage } from "@/components/ProductImage";
 import { getProduct, listCategories, listProducts, requireShop } from "@/lib/data";
 import { t } from "@/lib/i18n";
 import { getLang } from "@/lib/lang";
@@ -128,10 +129,11 @@ export default async function ProductsPage(props: {
                     key={p.id}
                     className="grid grid-cols-[64px_2.2fr_1fr_1fr_1fr_1fr_130px] items-center border-b border-line-4 px-5 py-3.5"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={qrs[i]}
-                      alt=""
+                    {/* The photo identifies the product at a glance; QR codes
+                        all look alike, so that stays on its own action. */}
+                    <ProductImage
+                      path={p.image_path}
+                      alt={p.name}
                       className="h-11 w-11 rounded-md"
                     />
                     <div className="flex min-w-0 flex-col gap-1 pe-3">
@@ -176,6 +178,18 @@ export default async function ProductsPage(props: {
                   key={p.id}
                   className="card flex items-center gap-3.5 p-4"
                 >
+                  <Link
+                    href={`/dashboard/products?edit=${p.id}`}
+                    className="shrink-0"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                  >
+                    <ProductImage
+                      path={p.image_path}
+                      alt=""
+                      className="h-14 w-14 rounded-xl"
+                    />
+                  </Link>
                   <Link href={`/dashboard/products?edit=${p.id}`} className="min-w-0 flex-1">
                     <span className="flex min-w-0 flex-col gap-1">
                       <span className="flex items-center gap-2">
@@ -203,7 +217,7 @@ export default async function ProductsPage(props: {
                       {money(p.price)}
                     </span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={qrs[i]} alt="" className="h-11 w-11 rounded-md" />
+                    <img src={qrs[i]} alt="" className="h-9 w-9 rounded-md" />
                   </Link>
                   <ProductRowActions
                     productId={p.id}
