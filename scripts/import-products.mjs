@@ -4,6 +4,10 @@
  *
  *   SUPABASE_ACCESS_TOKEN=sbp_xxx npm run import -- products.csv
  *
+ * With more than one shop on the project, name the target explicitly:
+ *
+ *   SHOP=alhasanain SUPABASE_ACCESS_TOKEN=sbp_xxx npm run import -- products.csv
+ *
  * CSV columns (header row required, order free, extras ignored):
  *
  *   name      required   product name, any language
@@ -26,6 +30,7 @@ import { readFileSync } from "node:fs";
 const API = "https://api.supabase.com/v1";
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 const PROJECT_NAME = process.env.SUPABASE_PROJECT_NAME ?? "qirtas";
+const SHOP = process.env.SHOP;
 
 const log = (m) => console.log(`  ${m}`);
 const step = (m) => console.log(`\n▸ ${m}`);
@@ -117,10 +122,31 @@ async function main() {
   REF = project.id;
   log(`project: ${project.name} (${REF})`);
 
-  const shops = await sql("select id, name, slug from public.shops order by created_at limit 2;");
+  const shops = await sql("select id, name, slug from public.shops order by created_at;");
   if (!shops.length) die("No shop exists yet. Complete setup at /login first.");
-  if (shops.length > 1) die("More than one shop found; this script expects a single shop.");
-  const shop = shops[0];
+
+  // Writing a catalogue into the wrong shop would be tedious to unpick, so
+  // an ambiguous target stops the run rather than picking one.
+  let shop;
+  if (SHOP) {
+    shop = shops.find(
+      (s) => s.slug.toLowerCase() === SHOP.toLowerCase() ||
+             s.name.toLowerCase() === SHOP.toLowerCase(),
+    );
+    if (!shop) {
+      die(
+        `No shop matching "${SHOP}". Available:\n\n  ` +
+          shops.map((s) => `${s.slug}  (${s.name})`).join("\n  "),
+      );
+    }
+  } else if (shops.length === 1) {
+    shop = shops[0];
+  } else {
+    die(
+      `${shops.length} shops on this project — name the target with SHOP=<slug>:\n\n  ` +
+        shops.map((s) => `SHOP=${s.slug}   # ${s.name}`).join("\n  "),
+    );
+  }
   log(`shop: ${shop.name}  (/s/${shop.slug})`);
 
   step(`Reading ${file}`);
