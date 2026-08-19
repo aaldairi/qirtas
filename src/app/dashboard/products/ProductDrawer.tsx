@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   createCategory,
@@ -30,7 +30,18 @@ export function ProductDrawer({
 }) {
   const d = t(lang);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [pending, start] = useTransition();
+
+  /**
+   * Closing returns to the list with any category filter intact. Dropping it
+   * on every save would make working through a filtered catalogue reset the
+   * view each time.
+   */
+  const listHref = (() => {
+    const cat = searchParams.get("cat");
+    return cat ? `/dashboard/products?cat=${cat}` : "/dashboard/products";
+  })();
 
   const [name, setName] = useState(product?.name ?? "");
   const [price, setPrice] = useState(
@@ -68,7 +79,7 @@ export function ProductDrawer({
   const [error, setError] = useState("");
 
   function close() {
-    router.push("/dashboard/products");
+    router.push(listHref);
   }
 
   const panelRef = useDialog(close);
@@ -187,13 +198,10 @@ export function ProductDrawer({
         await uploadProductImage(body);
       }
 
-      // New products land on their QR straight away — that's the whole point
-      // of saving one.
-      router.push(
-        product
-          ? "/dashboard/products"
-          : `/dashboard/products?qr=${result.id}`,
-      );
+      // Save closes, for both new and edited products. Sending a new one
+      // straight to its QR dialog meant the drawer never felt closed, and it
+      // interrupts anyone working down a list. The QR is one tap from the row.
+      router.push(listHref);
       router.refresh();
     });
   }
