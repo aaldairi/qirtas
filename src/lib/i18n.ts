@@ -154,6 +154,8 @@ const ar = {
     ] as [string, string][],
     terms: "بالمتابعة فإنك توافق على الشروط وسياسة الخصوصية.",
     resend: "أرسل مرة أخرى",
+    resendIn: "أرسل مرة أخرى بعد {seconds} ثانية",
+    resendWait: "انتظر {seconds} ثانية قبل طلب رابط جديد.",
   },
   onboarding: {
     title: "إعداد المتجر",
@@ -507,6 +509,8 @@ const en: Dict = {
     ] as [string, string][],
     terms: "By continuing you agree to the Terms and Privacy Policy.",
     resend: "Send again",
+    resendIn: "Send again in {seconds}s",
+    resendWait: "Wait {seconds}s before asking for another link.",
   },
   onboarding: {
     title: "Set up your shop",
