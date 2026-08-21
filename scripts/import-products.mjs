@@ -412,9 +412,20 @@ async function main() {
         ? `\n  ${imageProblems.length} photo(s) skipped:\n    ` + imageProblems.slice(0, 8).join("\n    ")
         : "") +
       `\n` +
-      `  Storefront: https://qirtas-rho.vercel.app/s/${shop.slug}\n` +
-      `  Labels:     https://qirtas-rho.vercel.app/dashboard/labels\n`,
+      `  Storefront: ${site()}/s/${shop.slug}\n` +
+      `  Labels:     ${site()}/dashboard/labels\n`,
   );
+}
+
+// Mirrors siteUrl() in src/lib/env.ts. Hardcoding the deploy host here meant
+// the importer kept printing the old address once a custom domain was added.
+function site() {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL;
+  if (explicit) return explicit.replace(/\/$/, "");
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  return "http://localhost:3000";
 }
 
 main().catch((error) => {
