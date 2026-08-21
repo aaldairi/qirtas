@@ -35,7 +35,7 @@ export function LoginForm({ lang }: { lang: Lang }) {
     });
 
     if (authError) {
-      setError(authError.message || d.common.somethingWrong);
+      setError(authMessage(authError, d));
       setState("idle");
       return;
     }
@@ -105,4 +105,25 @@ export function LoginForm({ lang }: { lang: Lang }) {
       </button>
     </form>
   );
+}
+
+// Supabase reports auth failures as English prose. Showing that raw inside an
+// Arabic screen is both untranslated and unactionable, so the cases an owner
+// can actually hit get a message that says what to do next.
+function authMessage(
+  error: { message?: string; status?: number },
+  d: ReturnType<typeof t>,
+): string {
+  const text = error.message ?? "";
+
+  if (error.status === 429 || /rate limit|too many requests/i.test(text)) {
+    return d.auth.rateLimited;
+  }
+  if (/signups? not allowed|disabled/i.test(text)) {
+    return d.auth.signupsOff;
+  }
+  if (/invalid|email address/i.test(text)) {
+    return d.auth.invalidEmail;
+  }
+  return d.common.somethingWrong;
 }

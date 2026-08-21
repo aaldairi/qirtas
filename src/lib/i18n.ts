@@ -144,6 +144,9 @@ const ar = {
     sent: "تفقّد بريدك",
     sentSub: "أرسلنا رابط الدخول إلى {email}. الرابط صالح لمدة ساعة.",
     invalidEmail: "أدخل بريداً إلكترونياً صحيحاً",
+    rateLimited:
+      "أرسلنا روابط كثيرة خلال وقت قصير. تفقّد بريدك — قد يكون آخر رابط ما زال صالحاً — أو أعد المحاولة بعد ساعة.",
+    signupsOff: "التسجيل موقوف حالياً على هذا المتجر.",
     bullets: [
       ["qr_code_2", "رمز QR لكل منتج"],
       ["account_balance", "تحويل بنكي أو محفظة أو نقداً"],
@@ -494,6 +497,9 @@ const en: Dict = {
     sent: "Check your inbox",
     sentSub: "We sent a sign-in link to {email}. It's valid for one hour.",
     invalidEmail: "Enter a valid email address",
+    rateLimited:
+      "Too many links in a short time. Check your inbox — the last one may still work — or try again in an hour.",
+    signupsOff: "Sign-ups are currently disabled for this shop.",
     bullets: [
       ["qr_code_2", "A QR code for every product"],
       ["account_balance", "Bank transfer, wallet, or cash"],
